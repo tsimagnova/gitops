@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_IMAGE_FRONTEND: fastapi-app
+
+jobs:
+  test-job:
+    name: Test Stage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Step
+        run: echo "test ok"
+
+  build-job:
+    name: Build Stage
+    runs-on: ubuntu-latest
+    needs: test-job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t $DOCKER_IMAGE_FRONTEND .
+          docker tag $DOCKER_IMAGE_FRONTEND ${{ secrets.DOCKER_USER }}/$DOCKER_IMAGE_FRONTEND
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USER }}/$DOCKER_IMAGE_FRONTEND
+
+      - name: Compile complete message
+        run: echo "Compile complete."
